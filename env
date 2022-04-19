@@ -42,9 +42,9 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
         
         
         panPos = self.panInfo[0] 
-        panPosX, panPosY, panPosZ = round(panPos[0]+ 0.8, 3), round(panPos[1]-0.05, 3), round(panPos[2]-0.01, 3)
-        maxPanX, maxPanY, maxPanZ = round(panPos[0]+ 1, 3), round(panPos[1]+0.1, 3), round(panPos[2]+0.1, 3)
-        posX, posY, posZ = self.omelettePos[0], self.omelettePos[1], self.omelettePos[2]
+        panPosX, panPosY, panPosZ = round(panPos[0]+ 0.8, 3), round(panPos[1]-0.05, 3), round(panPos[2]-0.01, 3) # pan  position coordinates
+        maxPanX, maxPanY, maxPanZ = round(panPos[0]+ 1, 3), round(panPos[1]+0.1, 3), round(panPos[2]+0.1, 3) # max position of the pan 
+        posX, posY, posZ = self.omelettePos[0], self.omelettePos[1], self.omelettePos[2] # omelette position
         
         #pan_coords = np.array([panPos[0]+0.82, panPos[1]-0.05, panPos[2]-0.05])
         #maxPan_coords = np.array([panPos[0]+1, panPos[1]+ 0.1, panPos[2]+ 0.1])
@@ -55,7 +55,6 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
         
         #print("current position of pan: ", panPosX, panPosY, panPosZ)
         #print("current position of omelette: ", self.omelettePos)
-        #(self.flip()is True)
         
         if (self.flip()):
             if (minX and minY and minZ and maxX and maxY):
@@ -109,13 +108,13 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
         negstop = round(-math.pi+0.2, 3)
         
         if (ornX >= start and ornX <= stop) or (ornX >= negstart and ornX <= negstop):
-            #print("ORIENTATION", ornX , ornY, ornZ)
+            #check if omelette has flipped in x direction, return true
             return True
         elif (ornY >= start and ornY <= stop) or (ornY >= negstart and ornY <= negstop):
             #check if omelette has flipped in y direction, return true
             return True
         else:
-            #print("ORIENTATION", ornX , ornY, ornZ)
+            #omelette has not flipped 
             return False 
 
     def done(self):
