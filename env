@@ -35,7 +35,7 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
         shoulder = action[0]
         elbow = action[1]
         wrist = action[2]
-        action_processed = np.array([shoulder, 0, elbow, 0, wrist, 0])
+        action_processed = np.array([0, shoulder, elbow, 0, wrist, 0])
         p.setJointMotorControlArray(self.robot, range(6), p.POSITION_CONTROL, action_processed)
         p.stepSimulation()
         time.sleep(0.01)
@@ -122,7 +122,7 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
         self.panInfo = p.getLinkState(self.robot, 4 )
         omelette_on_the_floor = self.omelettePos[2] < 0.15
         
-        #return self.envCounter >= 500# or omelette_on_the_floor
+        #return omelette_on_the_floor
     
     def close(self):
         p.disconnect(self.physicsClient)
