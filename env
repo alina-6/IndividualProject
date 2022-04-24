@@ -122,7 +122,7 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
         self.panInfo = p.getLinkState(self.robot, 4 )
         omelette_on_the_floor = self.omelettePos[2] < 0.15
         
-        #return omelette_on_the_floor
+        return omelette_on_the_floor
     
     def close(self):
         p.disconnect(self.physicsClient)
