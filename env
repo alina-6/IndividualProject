@@ -29,8 +29,6 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
         
     def step(self, action):
         
-        self.state = 1
-        
         p.setRealTimeSimulation(True, self.physicsClient)
         shoulder = action[0]
         elbow = action[1]
@@ -71,7 +69,7 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
     
     def reset(self):
         # reset is called once at initialization of simulation
-        self.state = 0
+        self.state = self.observation_space
 
         p.resetSimulation()
         p.setGravity(0,0,-9.8) 
