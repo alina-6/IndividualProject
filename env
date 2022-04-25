@@ -121,7 +121,7 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
     def done(self): 
         omelette_on_the_floor = self.omelettePos[2] < 0.15
        
-        return omelette_on_the_floor self.envCounter = 500
+        return omelette_on_the_floor self.envCounter >= 500
     
     def close(self):
         p.disconnect(self.physicsClient)
