@@ -63,12 +63,14 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
         print(reward)
         info = {}
         done = self.done()
+        self.envCounter += 1
         
         return self.state, reward, done, info 
 
     
     def reset(self):
         # reset is called once at initialization of simulation
+        self.envCounter = 0
         self.state = self.observation_space
 
         p.resetSimulation()
@@ -82,6 +84,9 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
         visualShapeID = 1
         self.omeletteStartPosition=[2.7, 0,2]
         self.omelette = p.createMultiBody(mass, omeletteID, visualShapeID, self.omeletteStartPosition)
+        
+        self.omelettePos, self.omeletteOrn = p.getBasePositionAndOrientation(self.omelette)
+        self.panInfo = p.getLinkState(self.robot, 4 )
         
         return self.state 
     
@@ -113,12 +118,10 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
             #omelette has not flipped 
             return False 
 
-    def done(self):
-        self.omelettePos, self.omeletteOrn = p.getBasePositionAndOrientation(self.omelette)
-        self.panInfo = p.getLinkState(self.robot, 4 )
+    def done(self): 
         omelette_on_the_floor = self.omelettePos[2] < 0.15
-        
-        return omelette_on_the_floor
+       
+        return omelette_on_the_floor self.envCounter = 500
     
     def close(self):
         p.disconnect(self.physicsClient)
