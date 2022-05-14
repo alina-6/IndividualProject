@@ -14,19 +14,17 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
     def __init__(self):
 
         self.action_space = Box(np.array([-math.pi, -math.pi, -math.pi]), # Let's assume three joints
-                                np.array([+math.pi, +math.pi, +math.pi]))
-        self.observation_space = Box(np.array([-math.pi, -math.pi, -math.pi, -5*math.pi/180, -5*math.pi/180]), # The rotation of
-                                     np.array([+math.pi, +math.pi, +math.pi, +5*math.pi/180, +5*math.pi/180])) # omelette to be
+                                np.array([math.pi, math.pi, math.pi]))
+        self.observation_space = Box(np.array([-math.pi, -math.pi, -math.pi, -10*math.pi/180, -10*math.pi/180]), # The rotation of
+                                     np.array([math.pi, math.pi, math.pi, 10*math.pi/180, 10*math.pi/180])) # omelette to be
                                                                      # included
         if (self.render):
             self.physicsClient = p.connect(p.GUI)
         else:
             self.physicsClient = p.connect(p.DIRECT)  # non-graphical version
-
+            
         p.setAdditionalSearchPath(pybullet_data.getDataPath())  # used by loadURDF
-        
-        self.state = None
-        
+
     def step(self, action):
         
         p.setRealTimeSimulation(True, self.physicsClient)
@@ -38,41 +36,61 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
         p.stepSimulation()
         time.sleep(0.01)
         
+        self.shoulder = action_processed[1]
+        self.elbow = action_processed[2]
+        self.wrist = action_processed[4]
+                        
+        self.omelettePos, self.omeletteOrn = p.getBasePositionAndOrientation(self.omelette)
+        self.panInfo = p.getLinkState(self.robot, 4 )
+        
         
         panPos = self.panInfo[0] 
-        panPosX, panPosY, panPosZ = round(panPos[0]+ 0.8, 3), round(panPos[1]-0.05, 3), round(panPos[2]-0.01, 3) # pan  position coordinates
-        maxPanX, maxPanY, maxPanZ = round(panPos[0]+ 1, 3), round(panPos[1]+0.1, 3), round(panPos[2]+0.1, 3) # max position of the pan 
-        posX, posY, posZ = self.omelettePos[0], self.omelettePos[1], self.omelettePos[2] # omelette position
-
+        panPosX, panPosY, panPosZ = round(panPos[0]+ 0.8, 3), round(panPos[1]-0.05, 3), round(panPos[2]-0.01, 3)
+        maxPanX, maxPanY, maxPanZ = round(panPos[0]+ 1, 3), round(panPos[1]+0.1, 3), round(panPos[2]+0.1, 3)
+        posX, posY, posZ = self.omelettePos[0], self.omelettePos[1], self.omelettePos[2]
 
         minX, maxX = posX >= panPosX, posX <= maxPanX
         minY, maxY = posY >= panPosY, posY <= maxPanY
         minZ = posZ >= panPosZ
         
-        #print("current position of pan: ", panPosX, panPosY, panPosZ)
-        #print("current position of omelette: ", self.omelettePos)
-        
-        if (self.flip()):
-            if (minX and minY and minZ and maxX and maxY):
-                reward = 1
-            else:
-                reward = -1
+        if (minX and minY and minZ and maxX and maxY and self.flip()):
+            reward = 1
         else:
             reward = -1 
         
-        print(reward)
+        #print(reward)
         info = {}
         done = self.done()
         self.envCounter += 1
         
-        return self.state, reward, done, info 
+        obs = self.get_observation()
+        
+        return obs, reward, done, info 
+    
+    def get_observation(self):
+        # returns the position of each joint and the orientation of the omelette
+        
+        _, omeletteOrn = p.getBasePositionAndOrientation(self.omelette)
+        orientation = p.getEulerFromQuaternion(omeletteOrn)
+        ornX = round(orientation[0], 3)
+        ornY = round(orientation[1], 3)
+        
+        sd = p.getJointState(self.robot,2)
+        el = p.getJointState(self.robot,3)
+        ws = p.getJointState(self.robot,4)
+        
+        w = ws[0]
+        e = el[0]
+        s = sd[0]
 
+        obs = np.array([s, e, w, ornX, ornY], dtype=np.float32)
+        
+        return obs
     
     def reset(self):
         # reset is called once at initialization of simulation
+        
         self.envCounter = 0
-        self.state = self.observation_space
-
         p.resetSimulation()
         p.setGravity(0,0,-9.8) 
         planeId = p.loadURDF("plane.urdf")
@@ -82,21 +100,20 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
         omeletteID = p.createCollisionShape(p.GEOM_CYLINDER, radius=0.2, height=0.01)
         mass = 0.2
         visualShapeID = 1
-        self.omeletteStartPosition=[2.7, 0,2]
-        self.omelette = p.createMultiBody(mass, omeletteID, visualShapeID, self.omeletteStartPosition)
+        omeletteStartPos=[2.7, 0,2]
+        self.omelette = p.createMultiBody(mass, omeletteID, visualShapeID, omeletteStartPos)
         
-        self.omelettePos, self.omeletteOrn = p.getBasePositionAndOrientation(self.omelette)
-        self.panInfo = p.getLinkState(self.robot, 4 )
+        obs = self.get_observation()
         
-        return self.state 
+        return obs
     
     
     def render(self, mode='human', close=False):
         pass
     
     def flip(self):
-        
         #180 degree(pi radians) rotation of omelette in x or y axis, returns True 
+        
         orientation = p.getEulerFromQuaternion(self.omeletteOrn)
         ornX = round(orientation[0], 3)
         ornY = round(orientation[1], 3)
@@ -109,19 +126,18 @@ class RobotEnv(Env): # defines class by passing Env to RoboEnv through gym env i
         negstop = round(-math.pi+0.2, 3)
         
         if (ornX >= start and ornX <= stop) or (ornX >= negstart and ornX <= negstop):
-            #check if omelette has flipped in x direction, return true
             return True
+        
         elif (ornY >= start and ornY <= stop) or (ornY >= negstart and ornY <= negstop):
             #check if omelette has flipped in y direction, return true
             return True
+        
         else:
-            #omelette has not flipped 
             return False 
 
-    def done(self): 
-        omelette_on_the_floor = self.omelettePos[2] < 0.15
-       
-        return omelette_on_the_floor self.envCounter >= 500
+    def done(self):
+        omelette_on_the_floor = self.omelettePos[2] <= 0.1
+        return omelette_on_the_floor or self.envCounter >= 500
     
     def close(self):
         p.disconnect(self.physicsClient)
